@@ -7,8 +7,6 @@ import numpy as np
 from collections import deque
 from torch.nn.functional import pad
 import math
-from torch.nn.utils.rnn import pad_sequence
-from time import time
 import re
 
 from data.tokens import PAD_TOKEN, BOS_TOKEN, EOS_TOKEN, TOKENS_DICT, token_to_id, id_to_token, TOKENS_GROUP_THREE

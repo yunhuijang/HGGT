@@ -18,21 +18,22 @@ from plot import plot_one_graph
 
 from networkx import adjacency_matrix
 
-# print(get_max_len('GDSS_com', order='C-M', k=3))
+
+print(get_max_len('GDSS_enz', order='C-M', k=3))
 # print(get_max_len('planar', order='C-M', k=3))
-with open('gcg/resource/GDSS_com/C-M/GDSS_com_test_graphs.pkl', 'rb') as f:
-    graphs = pickle.load(f)
-org_graph = graphs[15]
-adj_org = nx.adjacency_matrix(org_graph)
-tree_org = adj_to_k2_tree(torch.Tensor(adj_org.todense()), return_tree=True, k=3, is_mol=False)
-string_org = tree_to_bfs_string(tree_org, string_type='group')
-# strings = Path('gcg/resource/GDSS_com/C-M/GDSS_com_str_test_3.txt').read_text(encoding="utf=8").splitlines()
+# with open('gcg/resource/GDSS_com/C-M/GDSS_com_test_graphs.pkl', 'rb') as f:
+#     graphs = pickle.load(f)
+# # print(len(graphs))
+# org_graph = graphs[15]
+# adj_org = nx.adjacency_matrix(org_graph)
+# tree_org = adj_to_k2_tree(torch.Tensor(adj_org.todense()), return_tree=True, k=3, is_mol=False)
+# string_org = tree_to_bfs_string(tree_org, string_type='group')
+# # strings = Path('gcg/resource/GDSS_com/C-M/GDSS_com_str_test_3.txt').read_text(encoding="utf=8").splitlines()
 
-string = remove_redundant(string_org, False, k=3)
-print(string)
-tree = generate_initial_tree_red(string, k=3)
-valid_tree = generate_final_tree_red(tree, k=3)
+# string = remove_redundant(string_org, False, k=3)
+# tree = generate_initial_tree_red(string, k=3)
+# valid_tree = generate_final_tree_red(tree, k=3)
 
-adj = fix_symmetry(tree_to_adj(valid_tree, k=3))
-graph = adj_to_graph(adj.numpy())
-print(graph)
+# adj = fix_symmetry(tree_to_adj(valid_tree, k=3))
+# graph = adj_to_graph(adj.numpy())
+# print(len(graph.edges)==len(org_graph.edges))

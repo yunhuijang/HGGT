@@ -34,9 +34,8 @@ TOKENS_GROUP_RED_DICT[2] = TOKENS_GROUP_RED
 TOKENS_GROUP_THREE = standard_tokens.copy()
 group_num_tokens = list(product([0,1], repeat=9))
 TOKENS_GROUP_THREE.extend([''.join(str(token)).replace(', ', '')[1:-1] for token in group_num_tokens if token!=tuple(np.zeros(9, dtype=int))])
-for length in range(1,int(3*(3-1)/2)+1):
-    group_num_tokens = list(product([0,1], repeat=9-length))
-    TOKENS_GROUP_THREE.extend([''.join(str(token)).replace(', ', '')[1:-1] for token in group_num_tokens if token!=tuple(np.zeros(9-length, dtype=int))])
+group_num_tokens = list(product([0,1], repeat=6))
+TOKENS_GROUP_THREE.extend([''.join(str(token)).replace(', ', '')[1:-1] for token in group_num_tokens if token!=tuple(np.zeros(6, dtype=int))])
 TOKENS_GROUP_RED_DICT[3] = TOKENS_GROUP_THREE
 
 

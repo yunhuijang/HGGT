@@ -20,7 +20,7 @@ import json
 from data.tokens import grouper_mol
 
 
-DATA_DIR = "resource"
+DATA_DIR = "gcg/resource"
 NODE_TYPE_DICT = {'F': 9, 'O': 10, 'N': 11, 'C': 12, 'P': 13, 'I': 14, 'Cl': 15, 'Br': 16, 'S': 17}
 TYPE_NODE_DICT = {str(key): value for value, key in NODE_TYPE_DICT.items()}
 BOND_TYPE_DICT = {1: 5, 2: 6, 3: 7, 1.5: 8}
@@ -55,7 +55,6 @@ def nearest_power(N, base=2):
     return base**(a + 1)
 
 def adj_to_k2_tree(adj, return_tree=False, is_wholetree=False, k=4, is_mol=False):
-    # TODO: generalize for other k
     if not is_mol:
         adj[adj > 0] = 1
     n_org_nodes = adj.shape[0]
@@ -174,21 +173,22 @@ def tree_to_adj(tree, k=2):
     matrix_size = int(k**depth)
     adj = torch.zeros((matrix_size, matrix_size))
     for x, y, label in zip(x_list, y_list, label_list):
+        if (x > len(adj)) or (y > len(adj)):
+            return None
         adj[x, y] = label
     
     return adj
-
 
 def map_starting_point(tree, k):
     '''
     map starting points for each elements in tree (to convert adjacency matrix)
     '''
-    if len(tree.root.split('-'))>1:
+    try:
         bfs_list = [tree[node] for node in tree.expand_tree(mode=Tree.WIDTH, 
                                                             key=lambda x: (int(x.identifier.split('-')[0]), int(x.identifier.split('-')[1]), int(x.identifier.split('-')[2])))]
-    else:
+    except:
         bfs_list = [tree[node] for node in tree.expand_tree(mode=Tree.WIDTH, 
-                                                            key=lambda x: (int(x.identifier.split('-')[0]), int(x.identifier.split('-')[1])),)]
+                                                            key=lambda x: (int(x.identifier.split('-')[0]), int(x.identifier.split('-')[1])))]
     bfs_list[0].data = (0,0)
     
     for node in bfs_list[1:]:
@@ -197,42 +197,12 @@ def map_starting_point(tree, k):
         index = siblings.index(node.identifier)
         level = get_level(node)
         tree_depth = tree.depth()
-        k = get_k(tree)
         matrix_size = k**tree_depth
         adding_value = int(matrix_size/(k**level))
         parent_starting_point = parent.data
         node.data = (parent_starting_point[0]+adding_value*int(index/k), parent_starting_point[1]+adding_value*int(index%k))
             
     return tree
-
-def tree_to_dfs_string(tree):
-    '''
-    convert k2 tree into dfs string representation
-    '''
-    dfs_node_list = [tree[node] for node in tree.expand_tree(mode=Tree.DEPTH, 
-                                                            key=lambda x: (int(x.identifier.split('-')[0]), int(x.identifier.split('-')[1])))][1:]
-    string = ''
-    # initialization
-    first_value = int(dfs_node_list[0].tag)
-    string += str(first_value)
-    for prev, cur in zip(dfs_node_list, dfs_node_list[1:]):
-        prev_key = get_level(prev)
-        cur_key = get_level(cur)
-        cur_value = int(cur.tag)
-        if prev_key < cur_key:
-            string += f'({cur_value}'
-            continue
-        elif prev_key == cur_key:
-            string += f'{cur_value}'
-            continue
-        else:
-            while(prev_key - cur_key > 0):
-                string += ')'
-                prev_key -= 1
-            string += f'{cur_value}'
-            continue
-    string += ')'
-    return string
 
 def map_child_deg(node, tree):
     '''
@@ -267,38 +237,6 @@ def tree_to_bfs_string(tree, string_type='bfs'):
         bfs_value_list = [map_child_deg(node, tree) for node in bfs_node_list]
     
     return ''.join(bfs_value_list)
-
-def dfs_string_to_tree(string):
-    tree = Tree()
-    tree.create_node("root", "0")
-    parent_node = tree["0"]
-    string = iter(string)
-    # initialization
-    char = next(string, None)
-    tree.create_node(int(char), "1-1", parent=parent_node)
-    parent_node = tree["1-1"]
-    while True:
-        char = next(string, None)
-        if char == None:
-            break
-        elif char == '(':
-            char = next(string)
-        elif char == ')':
-            try:
-                char = next(string)
-            except StopIteration:
-                break
-            parent_node = get_parent(get_parent(parent_node, tree), tree)
-        else:
-            parent_node = get_parent(parent_node, tree)
-            
-        if char in ['0', '1']:
-            parent_level = get_level(parent_node)
-            cur_level_max = max([get_location(node) for node in tree.nodes.values() if get_level(node) == parent_level+1], default=0)
-            new_node_key = f"{parent_level+1}-{cur_level_max+1}"
-            tree.create_node(int(char), new_node_key, parent=parent_node)
-            parent_node = tree[new_node_key]
-    return tree
 
 def grouper(n, iterable, fillvalue=None):
     "grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
@@ -338,29 +276,6 @@ def clean_string(string):
         
     return string
 
-def check_validity(string):
-    '''
-    check validity of DFS string ("closed parenthesis")
-    '''
-    if len(string) == 0:
-        return False
-    if string[0] in [')', '(']:
-        return False
-    
-    stack = []
-    for i in string:
-        if i == '(':
-            stack.append(i)
-        elif i == ')':
-            if ((len(stack) > 0) and
-                ('(' == stack[-1])):
-                stack.pop()
-            else:
-                return False
-    if len(stack) == 0:
-        return True
-    else:
-        return False
     
 def train_val_test_split(
     data: list,
@@ -478,11 +393,11 @@ def find_new_identifier(node_id, index, is_dup=1):
         num *= is_dup
         cur_pre_identifier = split[0] + '-' + str(int(split[1])-1)
     else:
-        num = is_dup
+        num = 2
+        num *= is_dup
         cur_pre_identifier = split[0] + '-' + split[1]
     
     new_last_identifier = int(split[2])-num
-    # cur_pre_identifier = split[0] + '-' + split[1]
     return cur_pre_identifier + '-' + str(new_last_identifier)
 
 def get_child_index(k):
@@ -514,9 +429,15 @@ def add_symmetry_to_tree(tree, k):
                     for nid, n in sorted(subtree.nodes.items(), key=lambda x: (int(x[0].split('-')[0]), int(x[0].split('-')[1]), int(x[0].split('-')[2]))):
                         count_dup = len([key for key in subtree.nodes.keys() 
                                         if (key.split('-')[0] == nid.split('-')[0]) and (key.split('-')[1] == nid.split('-')[1])])
-                        new_iden = find_new_identifier(nid, index, count_dup*100)
+                        org_dup = len([key for key in tree.nodes.keys() 
+                                        if (key.split('-')[0] == nid.split('-')[0]) and (key.split('-')[1] == nid.split('-')[1])])
+                        new_iden = find_new_identifier(nid, index, (count_dup+org_dup)*100)
+                        while (new_iden in tree):
+                            new = int(new_iden.split('-')[2]) - 1
+                            new_iden = new_iden.split('-')[0] + '-' + new_iden.split('-')[1] + '-' +  str(new)
                         new_tree.update_node(nid, identifier=new_iden)
                     tree.paste(node.identifier, new_tree)
+                    
                 else:
                     tree.add_node(new_node, parent=node)
             

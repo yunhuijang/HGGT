@@ -11,14 +11,14 @@ import os
 from moses.metrics.metrics import get_all_metrics
 
 from data.dataset import EgoDataset, ComDataset, EnzDataset, GridDataset, GridSmallDataset, QM9Dataset, ZINCDataset, PlanarDataset, SBMDataset, ProteinsDataset
-from data.data_utils import dfs_string_to_tree, tree_to_adj, check_validity, bfs_string_to_tree, adj_to_graph, check_tree_validity, generate_final_tree_red, fix_symmetry, generate_initial_tree_red
+from data.data_utils import tree_to_adj, bfs_string_to_tree, adj_to_graph, check_tree_validity, generate_final_tree_red, fix_symmetry, generate_initial_tree_red
 from data.mol_utils import adj_to_graph_mol, mols_to_smiles, check_adj_validity_mol, mols_to_nx, fix_symmetry_mol, canonicalize_smiles
 from evaluation.evaluation import compute_sequence_accuracy, compute_sequence_cross_entropy, save_graph_list, load_eval_settings, eval_graph_list
 from plot import plot_graphs_list
-from model.lstm_generator import LSTMGenerator
 from data.tokens import untokenize
+from model.trans_generator import TransGenerator
 
-DATA_DIR = "resource"
+DATA_DIR = "gcg/resource"
 
 class BaseGeneratorLightningModule(pl.LightningModule):
     def __init__(self, hparams):
@@ -60,7 +60,7 @@ class BaseGeneratorLightningModule(pl.LightningModule):
         self.max_depth = hparams.max_depth
 
     def setup_model(self, hparams):
-        self.model = LSTMGenerator(
+        self.model = Generator(
             emb_size=hparams.emb_size,
             dropout=hparams.dropout,
             dataset=hparams.dataset_name
@@ -173,8 +173,9 @@ class BaseGeneratorLightningModule(pl.LightningModule):
                     tree_validity = 0
                 wandb.log({"tree-validity": tree_validity})
                 # valid_sampled_trees = valid_sampled_trees[:len(self.test_graphs)]
-                adjs = [fix_symmetry(tree_to_adj(tree, self.k)).numpy() for tree in tqdm(valid_sampled_trees, "Sampling: converting tree into graph")]
-                sampled_graphs = [adj_to_graph(adj) for adj in adjs]
+                adjs = [fix_symmetry(tree_to_adj(tree, self.k)).numpy() for tree in tqdm(valid_sampled_trees[:2*len(self.test_graphs)], "Sampling: converting tree into graph")]
+                adjs = [adj for adj in adjs if adj is not None]
+                sampled_graphs = [adj_to_graph(adj) for adj in adjs[:len(self.test_graphs)]]
                 save_graph_list(self.hparams.dataset_name, self.ts, sampled_graphs, valid_string_list, string_list, org_string_list)
                 plot_dir = f'{self.hparams.dataset_name}/{self.ts}'
                 plot_graphs_list(sampled_graphs, save_dir=plot_dir)

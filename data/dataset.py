@@ -10,7 +10,7 @@ from data.data_utils import map_deg_string, remove_redundant, adj_to_graph
 from data.tokens import tokenize
 
 
-DATA_DIR = "resource"
+DATA_DIR = "gcg/resource"
     
 class EgoDataset(Dataset):
     data_name = "GDSS_ego"
