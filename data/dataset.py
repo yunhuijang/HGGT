@@ -10,7 +10,7 @@ from data.data_utils import map_deg_string, remove_redundant, adj_to_graph
 from data.tokens import tokenize
 
 
-DATA_DIR = "gcg/resource"
+DATA_DIR = "resource"
     
 class EgoDataset(Dataset):
     data_name = "GDSS_ego"
@@ -21,19 +21,11 @@ class EgoDataset(Dataset):
         self.is_tree = is_tree
         self.order = order
         self.k = k
-        if self.string_type in ['adj', 'adj_red']:
-            if self.data_name in ['planar', 'sbm']:
-                adjs, _, _, _, _, _, _, _ = torch.load(f'{DATA_DIR}/{self.data_name}/{self.data_name}.pt')
-                graphs = [adj_to_graph(adj.numpy()) for adj in adjs]
-            else:
-                with open (f'{DATA_DIR}/{self.data_name}/{self.data_name}.pkl', 'rb') as f:
-                    graphs = pickle.load(f)
-            
-            adjs = [nx.adjacency_matrix()]
-            self.strings = '0'
-        else:
+        if k > 2:
             string_path = os.path.join(self.raw_dir, f"{self.order}/{self.data_name}_str_{split}_{self.k}.txt")
-            self.strings = Path(string_path).read_text(encoding="utf=8").splitlines()
+        else:
+            string_path = os.path.join(self.raw_dir, f"{self.order}/{self.data_name}_str_{split}.txt")
+        self.strings = Path(string_path).read_text(encoding="utf=8").splitlines()
         # use tree degree information
         if self.string_type in ['bfs-deg', 'bfs-deg-group']:
             self.strings = [map_deg_string(string) for string in self.strings]

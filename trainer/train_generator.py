@@ -18,7 +18,7 @@ from plot import plot_graphs_list
 from data.tokens import untokenize
 from model.trans_generator import TransGenerator
 
-DATA_DIR = "gcg/resource"
+DATA_DIR = "resource"
 
 class BaseGeneratorLightningModule(pl.LightningModule):
     def __init__(self, hparams):
@@ -60,10 +60,20 @@ class BaseGeneratorLightningModule(pl.LightningModule):
         self.max_depth = hparams.max_depth
 
     def setup_model(self, hparams):
-        self.model = Generator(
+        self.model = TransGenerator(
+            num_layers=hparams.num_layers,
             emb_size=hparams.emb_size,
+            nhead=hparams.nhead,
+            dim_feedforward=hparams.dim_feedforward,
+            input_dropout=hparams.input_dropout,
             dropout=hparams.dropout,
-            dataset=hparams.dataset_name
+            max_len=hparams.max_len,
+            string_type=hparams.string_type,
+            tree_pos=hparams.tree_pos,
+            pos_type=hparams.pos_type,
+            learn_pos=hparams.learn_pos,
+            abs_pos=hparams.abs_pos,
+            k=hparams.k
         )
 
     def configure_optimizers(self):

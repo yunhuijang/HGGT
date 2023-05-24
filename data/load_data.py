@@ -11,7 +11,7 @@ from data.data_utils import train_val_test_split, adj_to_k2_tree, map_new_ordere
 from data.mol_utils import canonicalize_smiles, smiles_to_mols, add_self_loop, tree_to_bfs_string_mol, mols_to_nx
 
 
-DATA_DIR = "gcg/resource"
+DATA_DIR = "resource"
 
 def generate_string(dataset_name, order='C-M', k=2):
     '''

@@ -8,3 +8,4 @@ samples/
 *.json
 wandb/
 *.sh
+k2g/

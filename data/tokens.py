@@ -110,7 +110,7 @@ TOKENS_ZINC_RED.extend(list(set([''.join(token) for token in group_ad_tokens])))
 
 TOKENS_DICT = {'dfs': TOKENS_DFS, 'bfs': TOKENS_BFS, 'group': TOKENS_GROUP, 
                'bfs-deg': TOKENS_BFS_DEG, 'bfs-deg-group': TOKENS_BFS_DEG_GROUP,
-               'qm9': TOKENS_QM9, 'zinc': TOKENS_ZINC, 'group-red-2': TOKENS_GROUP_RED, 
+               'qm9': TOKENS_QM9, 'zinc': TOKENS_ZINC, 'group-red': TOKENS_GROUP_RED, 
                'group-red-3': TOKENS_GROUP_THREE, 'qm9-red': TOKENS_QM9_RED, 'zinc-red': TOKENS_ZINC_RED}
 
 

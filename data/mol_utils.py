@@ -11,6 +11,8 @@ from data.data_utils import train_val_test_split, adj_to_k2_tree, map_child_deg,
 
 DATA_DIR = "resource"
 
+# codes adapted from https://github.com/harryjo97/GDSS
+
 def canonicalize_smiles(smiles):
     return [Chem.MolToSmiles(Chem.MolFromSmiles(smi)) for smi in tqdm(smiles, 'Canonicalizing')]
 
