@@ -59,4 +59,4 @@ For example,
 CUDA_VISIBLE_DEVICES=0 bash script/trans/com_small_2.sh
 ```
 
-Then the generated samples are saved in  `config/samples/` directory and the metrics are reported on WANDB.
+Then the generated samples are saved in  `samples/` directory and the metrics are reported on WANDB.
