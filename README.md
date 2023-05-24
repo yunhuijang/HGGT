@@ -32,7 +32,7 @@ pip install treelib
 
 We provide four generic datasets (community-small, enzymes, grid, and planar) and two molecular datasets (ZINC250k, and QM9). You can download the pickle files of five datasets (community-small, enzymes, grid, ZINC250k, and QM9) from https://github.com/harryjo97/GDSS/tree/master and the other from https://github.com/KarolisMart/SPECTRE. 
 
-After downloading the pickle file into the `reource/${dataset_name}/` directory, you can generate sequence representations of $K^2$-tree by running:
+After downloading the pickle file into the `reource/${dataset_name}/` directory, make a new directory `reource/${dataset_name}/${order}/` to store sequence representations. Then you can generate sequence representations of $K^2$-tree by running:
 
 ```sh
  python generate_string.py --dataset_name ${dataset_name} --order ${order} --k ${k}

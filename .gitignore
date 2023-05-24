@@ -1,5 +1,4 @@
 resource/
-*.png
 samples/
 *.pyc
 *.ckpt
