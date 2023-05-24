@@ -108,12 +108,7 @@ class BaseGeneratorLightningModule(pl.LightningModule):
         string_list, org_string_list = self.sample(num_samples)
         
         if not self.trainer.sanity_checking:
-            
-            if self.hparams.string_type == 'dfs':
-                valid_string_list = [string for string in string_list if check_validity(string)]
-                sampled_trees = [dfs_string_to_tree(string) for string in valid_string_list]
-                valid_sampled_trees = [tree for tree in sampled_trees if (tree.depth() <= self.max_depth) and check_tree_validity(tree)]
-            elif self.hparams.string_type in ['bfs', 'group', 'bfs-deg', 'bfs-deg-group', 'qm9', 'zinc']:
+            if self.hparams.string_type in ['bfs', 'group', 'bfs-deg', 'bfs-deg-group', 'qm9', 'zinc']:
                 valid_string_list = [string for string in string_list if len(string)>0 and len(string)%4 == 0]
                 is_zinc = False
                 if self.hparams.string_type in ['zinc', 'zinc-red']:

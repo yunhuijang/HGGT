@@ -79,7 +79,6 @@ def adj_to_k2_tree(adj, return_tree=False, is_wholetree=False, k=4, is_mol=False
         for col_start, col_end in zip(start_index, end_index):
             slices.append(padded_adj[row_start:row_end, col_start:col_end])
     
-    # slices = [padded_adj[:slice_size, :slice_size], padded_adj[:slice_size, slice_size:], padded_adj[slice_size:, :slice_size], padded_adj[slice_size:, slice_size:]]
     sliced_adjs = deque(slices)
     sliced_adjs_is_zero = LongTensor([int(count_nonzero(adj)>0) for adj in sliced_adjs])
     tree_list.append(sliced_adjs_is_zero)
@@ -117,8 +116,6 @@ def adj_to_k2_tree(adj, return_tree=False, is_wholetree=False, k=4, is_mol=False
         for row_start, row_end in zip(start_index, end_index):
             for col_start, col_end in zip(start_index, end_index):
                 new_sliced_adjs.append(target_adj[row_start:row_end, col_start:col_end])
-        # new_sliced_adjs = [target_adj[:slice_size, :slice_size], target_adj[:slice_size, slice_size:], 
-        #         target_adj[slice_size:, :slice_size], target_adj[slice_size:, slice_size:]]
         new_sliced_adjs_is_zero = LongTensor([int(count_nonzero(adj)>0) for adj in new_sliced_adjs])
         sliced_adjs.extend(new_sliced_adjs)
         tree_list.append(new_sliced_adjs_is_zero)
@@ -173,8 +170,8 @@ def tree_to_adj(tree, k=2):
     matrix_size = int(k**depth)
     adj = torch.zeros((matrix_size, matrix_size))
     for x, y, label in zip(x_list, y_list, label_list):
-        if (x > len(adj)) or (y > len(adj)):
-            return None
+        # if (x > len(adj)) or (y > len(adj)):
+        #     return None
         adj[x, y] = label
     
     return adj
