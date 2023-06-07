@@ -33,7 +33,6 @@ class BaseGeneratorLightningModule(pl.LightningModule):
     def setup_datasets(self, hparams):
         self.string_type = hparams.string_type
         self.order = hparams.order
-        self.k = hparams.k
         dataset_cls = {
             "GDSS_grid": GridDataset,
             "GDSS_ego": EgoDataset,
@@ -46,16 +45,9 @@ class BaseGeneratorLightningModule(pl.LightningModule):
             'sbm': SBMDataset,
             'proteins': ProteinsDataset
         }.get(hparams.dataset_name)
-        if hparams.dataset_name in ['qm9', 'zinc']:
-            with open(f'{DATA_DIR}/{hparams.dataset_name}/{hparams.order}/{hparams.dataset_name}' + f'_smiles_train.txt', 'r') as f:
-                self.train_smiles = f.readlines()
-                self.train_smiles = canonicalize_smiles(self.train_smiles)
-            with open(f'{DATA_DIR}/{hparams.dataset_name}/{hparams.order}/{hparams.dataset_name}' + f'_smiles_test.txt', 'r') as f:
-                self.test_smiles = f.readlines()
-                self.test_smiles = canonicalize_smiles(self.test_smiles)
-        with open(f'{DATA_DIR}/{hparams.dataset_name}/{hparams.order}/{hparams.dataset_name}' + f'_test_graphs.pkl', 'rb') as f:
+        with open(f'{DATA_DIR}/{hparams.dataset_name}' + f'_test_graphs.pkl', 'rb') as f:
             self.test_graphs = pickle.load(f)
-        self.train_dataset, self.val_dataset, self.test_dataset = [dataset_cls(split, self.string_type, self.order, is_tree=hparams.tree_pos, k=self.k)
+        self.train_dataset, self.val_dataset, self.test_dataset = [dataset_cls(split, self.string_type, self.order)
                                                                    for split in ['train', 'val', 'test']]
         self.max_depth = hparams.max_depth
 

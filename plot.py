@@ -74,7 +74,7 @@ def plot_one_graph(graph, title, save_dir):
 
     save_fig(save_dir=save_dir, title=title)
 
-def save_fig(save_dir=None, title='fig', dpi=1000):
+def save_fig(save_dir=None, title='fig', dpi=400):
     plt.tight_layout()
     plt.subplots_adjust(top=0.85)
     if save_dir is None:

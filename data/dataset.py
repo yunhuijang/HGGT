@@ -25,7 +25,6 @@ class EgoDataset(Dataset):
             string_path = os.path.join(self.raw_dir, f"{self.order}/{self.data_name}_str_{split}_{self.k}.txt")
         else:
             string_path = os.path.join(self.raw_dir, f"{self.order}/{self.data_name}_str_{split}.txt")
-        self.strings = Path(string_path).read_text(encoding="utf=8").splitlines()
         # use tree degree information
         if self.string_type in ['bfs-deg', 'bfs-deg-group']:
             self.strings = [map_deg_string(string) for string in self.strings]

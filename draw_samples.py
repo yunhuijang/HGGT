@@ -57,7 +57,7 @@ def draw_generated_graphs(data_name, method, index=0):
         with open(f'../GDSS/samples/pkl/{data_dict[data_name]}/test/{data_name}_sample.pkl', 'rb') as f:
             graphs = pickle.load(f)
         print(len(graphs))
-    plot_graphs_list(graphs[:9], title=f'{data_name}-{method}', save_dir=f'figure/{data_name}', max_num=9)
+    plot_graphs_list(graphs[:4], title=f'{data_name}-{method}', save_dir=f'figure/{data_name}', max_num=9)
     # plot_one_graph(graphs[index], title=f'{method}-one', save_dir=f'figure/{data_name}')
 
 def draw_generated_molecules(data_name):
@@ -99,12 +99,12 @@ def draw_loss_plot():
     for pos in ['left', 'right', 'top', 'bottom']:
         ax.spines[pos].set_linewidth(1.5)
     
-# for data in ['GDSS_com', 'GDSS_enz', 'GDSS_grid']:
-# # for data in ['GDSS_grid']:
-#     print(data)
-#     # for method in ['train', 'gcg', 'digress', 'graphgen']:
-#     for method in ['gdss']:
-#         print(method)
-#         draw_generated_graphs(data, method, 0)
+for data in ['GDSS_com', 'GDSS_grid']:
+# for data in ['GDSS_grid']:
+    print(data)
+    for method in ['train', 'graphgen', 'gdss']:
+    # for method in ['gdss']:
+        print(method)
+        draw_generated_graphs(data, method, 0)
 
-draw_generated_molecules('zinc')
+# draw_generated_molecules('zinc')
