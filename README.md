@@ -24,6 +24,7 @@ pip install rdkit==2020.9.5
 pip install git+https://github.com/fabriziocosta/EDeN.git
 pip install pytorch-lightning==1.9.3
 pip install treelib
+pip install networkx==2.8.7
 ```
 
 ## Running experiments
