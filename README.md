@@ -1,6 +1,6 @@
-# Hierarchical Graph Generation with $K^2$-trees 
+# Graph Generation with $K^2$-trees (ICLR 2024)
 
-In this repository, we implement the Hierarchical Graph Generation with $K^{2}$-Tree (HGGT).
+In this repository, we implement the paper: [Graph Generation with $K^{2}$-Tree (HGGT)](https://openreview.net/pdf?id=RIEW6M9YoV).
 
 <p align="center">
     <img width="750" src="assets/k2_tree_4.png"/>
