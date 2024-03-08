@@ -6,18 +6,16 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 import wandb
 from time import gmtime, strftime
-import pickle
 import time
 from moses.metrics.metrics import get_all_metrics
 
-from data.dataset import EgoDataset, ComDataset, EnzDataset, GridDataset, GridSmallDataset, QM9Dataset, ZINCDataset, PlanarDataset, SBMDataset, ProteinsDataset, ProfoldDataset, EgoLargeDataset, PointDataset, LobsterDataset
-from data.data_utils import tree_to_adj, bfs_string_to_tree, adj_to_graph, check_tree_validity, generate_final_tree_red, fix_symmetry, generate_initial_tree_red, clean_high_feature
+from data.dataset import ComDataset, EnzDataset, GridDataset, QM9Dataset, ZINCDataset, PlanarDataset
+from data.data_utils import tree_to_adj, adj_to_graph, check_tree_validity, generate_final_tree_red, fix_symmetry, generate_initial_tree_red
 from data.mol_utils import adj_to_graph_mol, mols_to_smiles, check_adj_validity_mol, mols_to_nx, fix_symmetry_mol, canonicalize_smiles
 from evaluation.evaluation import compute_sequence_accuracy, compute_sequence_cross_entropy, save_graph_list, load_eval_settings, eval_graph_list
 from plot import plot_graphs_list
 from data.tokens import untokenize
 from model.trans_generator import TransGenerator
-from evaluation.evaluation_spectre import eval_fraction_unique_non_isomorphic_valid, eval_fraction_isomorphic, eval_fraction_unique, is_planar_graph, eval_acc_planar_graph, eval_acc_grid_graph, eval_acc_sbm_graph, is_sbm_graph, eval_acc_lobster_graph, eval_fraction_isomorphic_ego, eval_fraction_unique_ego, eval_fraction_unique_non_isomorphic_valid_ego, is_grid_graph, is_lobster_graph
 from data.load_data import generate_string
 
 
@@ -32,31 +30,19 @@ class BaseGeneratorLightningModule(pl.LightningModule):
         self.setup_model(hparams)
         self.ts = strftime('%b%d-%H:%M:%S', gmtime())
         wandb.config['ts'] = self.ts
-        # if not hparams.ckpt_path:
-        #     wandb.config['ts'] = self.ts
         
     def setup_datasets(self, hparams):
         self.string_type = hparams.string_type
         self.order = hparams.order
         dataset_cls = {
             "GDSS_grid": GridDataset,
-            "GDSS_ego": EgoDataset,
             "GDSS_com": ComDataset,
             "GDSS_enz": EnzDataset,
-            "grid_small": GridSmallDataset,
             'qm9': QM9Dataset,
             'zinc': ZINCDataset,
             'planar': PlanarDataset,
-            'sbm': SBMDataset,
-            'proteins': ProteinsDataset,
-            'profold': ProfoldDataset,
-            'lobster': LobsterDataset,
-            'ego': EgoLargeDataset,
-            'point': PointDataset
         }.get(hparams.dataset_name)
         self.train_graphs, _ , self.test_graphs = generate_string(hparams.dataset_name, hparams.order, hparams.k)
-        # with open(f'{DATA_DIR}/{hparams.dataset_name}/{hparams.order}/{hparams.dataset_name}' + f'_test_graphs.pkl', 'rb') as f:
-        #     self.test_graphs = pickle.load(f)
         self.train_dataset, self.val_dataset, self.test_dataset = [dataset_cls(split, self.string_type, self.order)
                                                                    for split in ['train', 'val', 'test']]
         if hparams.dataset_name in ['qm9', 'zinc']:
@@ -129,28 +115,16 @@ class BaseGeneratorLightningModule(pl.LightningModule):
 
 
         if not self.trainer.sanity_checking:
-            if self.hparams.string_type in ['bfs', 'group', 'bfs-deg', 'bfs-deg-group', 'qm9', 'zinc']:
-                valid_string_list = [string for string in string_list if len(string)>0 and len(string)%4 == 0]
-                is_zinc = False
-                if self.hparams.string_type in ['zinc', 'zinc-red', 'zinc-red-high']:
-                    is_zinc = True
-                sampled_trees = [bfs_string_to_tree(string, is_zinc, self.hparams.k) 
-                                for string in tqdm(valid_string_list, "Sampling: converting string to tree")]
-                valid_sampled_trees = [tree for tree in sampled_trees if (tree.depth() <= self.max_depth) and check_tree_validity(tree)]
+            valid_string_list = [string for string in string_list if len(string)>0]
+            sampled_trees = [generate_initial_tree_red(string, self.hparams.k) for string in valid_string_list]
+            valid_sampled_trees = [tree for tree in sampled_trees if check_tree_validity(tree)]
+            valid_sampled_trees = [generate_final_tree_red(tree, self.hparams.k) for tree in tqdm(valid_sampled_trees, "Sampling: converting string to tree")]
             
-            elif self.hparams.string_type in ['bfs-red', 'group-red', 'group-red-3', 'qm9-red', 'zinc-red', 'zinc-red-high']:
-                valid_string_list = [string for string in string_list if len(string)>0]
-                if self.hparams.string_type == 'zinc-red-high':
-                    valid_string_list = [clean_high_feature(string) for string in valid_string_list]
-                sampled_trees = [generate_initial_tree_red(string, self.hparams.k) for string in valid_string_list]
-                valid_sampled_trees = [tree for tree in sampled_trees if check_tree_validity(tree)]
-                valid_sampled_trees = [generate_final_tree_red(tree, self.hparams.k) for tree in tqdm(valid_sampled_trees, "Sampling: converting string to tree")]
-                
             wandb.log({"validity": len(valid_string_list)/len(string_list)})
             # write down string
 
             # for molecular dataset
-            if self.hparams.string_type in ['zinc', 'qm9', 'zinc-red', 'qm9-red', 'zinc-red-high']:
+            if self.hparams.string_type in ['zinc-red', 'qm9-red']:
                 # valid_sampled_trees = sampled_trees[:len(self.test_graphs)]
                 adjs = [fix_symmetry_mol(tree_to_adj(tree)).numpy() for tree in tqdm(valid_sampled_trees, "Sampling: converting tree into adj")]
                 valid_adjs = [valid_adj for valid_adj in [check_adj_validity_mol(adj) for adj in adjs] if valid_adj is not None]
@@ -178,6 +152,7 @@ class BaseGeneratorLightningModule(pl.LightningModule):
                 metrics_dict['NSPDK'] = scores_nspdk
                 metrics_dict['validity_wo_cor'] = sum(no_corrects) / num_mols
                 wandb.log(metrics_dict)
+            # for generic graph dataset
             else:
                 table = wandb.Table(columns=['Orginal', 'String', 'Validity'])
                 if 'red' in self.hparams.string_type:
@@ -191,7 +166,7 @@ class BaseGeneratorLightningModule(pl.LightningModule):
                 else:
                     tree_validity = 0
                 wandb.log({"tree-validity": tree_validity})
-                # valid_sampled_trees = valid_sampled_trees[:len(self.test_graphs)]
+
                 adjs = [fix_symmetry(tree_to_adj(tree, self.hparams.k)).numpy() for tree in tqdm(valid_sampled_trees[:2*len(self.test_graphs)], "Sampling: converting tree into graph")]
                 adjs = [adj for adj in adjs if adj is not None]
                 sampled_graphs = [adj_to_graph(adj) for adj in adjs[:len(self.test_graphs)]]
@@ -199,44 +174,19 @@ class BaseGeneratorLightningModule(pl.LightningModule):
                 plot_dir = f'{self.hparams.dataset_name}/{self.ts}'
                 plot_graphs_list(sampled_graphs, save_dir=plot_dir)
                 wandb.log({"samples": wandb.Image(f'./samples/fig/{plot_dir}/title.png')})
-                # check validity (Grid, planar, sbm)
-                
-                
+
                 # GDSS evaluation
+                gen_graphs = sampled_graphs[:len(self.test_graphs)]
                 methods, kernels = load_eval_settings('')
                 if len(sampled_graphs) == 0:
                     mmd_results = {'degree': np.nan, 'orbit': np.nan, 'cluster': np.nan, 'spectral': np.nan}
                 else:
-                    mmd_results = eval_graph_list(self.test_graphs, sampled_graphs[:len(self.test_graphs)], methods=methods, kernels=kernels)
+                    mmd_results = eval_graph_list(self.test_graphs, gen_graphs, methods=methods, kernels=kernels)
                 wandb.log(mmd_results)
 
                 # SPECTRE evaluation
-                gen_graphs = sampled_graphs[:len(self.test_graphs)]
-                if len(gen_graphs) > 0:
-                    if self.hparams.dataset_name == 'lobster':
-                        spectre_valid = eval_acc_lobster_graph(gen_graphs)
-                        _, spectre_un, spectre_vun = eval_fraction_unique_non_isomorphic_valid(gen_graphs, self.train_graphs, is_lobster_graph)
-                    elif self.hparams.dataset_name == 'planar':
-                        spectre_valid = eval_acc_planar_graph(gen_graphs)
-                        _, spectre_un, spectre_vun = eval_fraction_unique_non_isomorphic_valid(gen_graphs, self.train_graphs, is_planar_graph)
-                    elif self.hparams.dataset_name == 'GDSS_grid':
-                        spectre_valid = eval_acc_grid_graph(gen_graphs)
-                        _, spectre_un, spectre_vun = eval_fraction_unique_non_isomorphic_valid(gen_graphs, self.train_graphs, is_grid_graph)
-                    elif self.hparams.dataset_name == 'ego':
-                        spectre_valid = 0
-                        _, spectre_un, spectre_vun = eval_fraction_unique_non_isomorphic_valid_ego(gen_graphs, self.train_graphs)
-                    else:
-                        spectre_valid = 0
-                        _, spectre_un, spectre_vun = eval_fraction_unique_non_isomorphic_valid(gen_graphs, self.train_graphs)
-                    if self.hparams.dataset_name == 'ego':
-                        spectre_unique = eval_fraction_unique_ego(gen_graphs)
-                        spectre_novel = eval_fraction_isomorphic_ego(gen_graphs, self.train_graphs)
-                    else:
-                        spectre_unique = eval_fraction_unique(gen_graphs)
-                        spectre_novel = round(1.0-eval_fraction_isomorphic(gen_graphs, self.train_graphs),3)
-                    spectre_results = {'spec_valid': spectre_valid, 'spec_unique': spectre_unique, 'spec_novel': spectre_novel,
-                                    'spec_un': spectre_un, 'spec_vun': spectre_vun}
-                    wandb.log(spectre_results)
+                
+
 
     def sample(self, num_samples):
         offset = 0

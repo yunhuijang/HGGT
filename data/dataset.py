@@ -2,21 +2,17 @@ import torch
 from torch.utils.data import Dataset
 from pathlib import Path
 import os
-import pickle
-import networkx as nx
 from tqdm import tqdm
 
-from data.data_utils import map_deg_string, remove_redundant
+from data.data_utils import remove_redundant
 from data.tokens import tokenize
 
 
 DATA_DIR = "resource"
     
-class EgoDataset(Dataset):
-    data_name = "GDSS_ego"
-    raw_dir = f"{DATA_DIR}/GDSS_ego"
+class GenericDataset(Dataset):
     is_mol = False
-    def __init__(self, split, string_type='bfs', order='C-M', is_tree=False, k=2):
+    def __init__(self, split, string_type='group-red', order='C-M', is_tree=False, k=2):
         self.string_type = string_type
         self.is_tree = is_tree
         self.order = order
@@ -26,12 +22,9 @@ class EgoDataset(Dataset):
         else:
             string_path = os.path.join(self.raw_dir, f"{self.order}/{self.data_name}_str_{split}.txt")
         self.strings = Path(string_path).read_text(encoding="utf=8").splitlines()
-        # use tree degree information
-        if self.string_type in ['bfs-deg', 'bfs-deg-group']:
-            self.strings = [map_deg_string(string) for string in self.strings]
+
         # remove redundant
-        if 'red' in self.string_type:
-            self.strings = [remove_redundant(string, self.is_mol, self.k) for string in tqdm(self.strings, 'Removing redundancy')]
+        self.strings = [remove_redundant(string, self.is_mol, self.k) for string in tqdm(self.strings, 'Removing redundancy')]
         
     def __len__(self):
         return len(self.strings)
@@ -39,72 +32,30 @@ class EgoDataset(Dataset):
     def __getitem__(self, idx: int):
         return torch.LongTensor(tokenize(self.strings[idx], self.string_type, self.k))
     
-class ComDataset(EgoDataset):
+class ComDataset(GenericDataset):
     data_name = 'GDSS_com'
     raw_dir = f'{DATA_DIR}/GDSS_com'
-    is_mol = False
     
-class EnzDataset(EgoDataset):
+class EnzDataset(GenericDataset):
     data_name = 'GDSS_enz'
     raw_dir = f'{DATA_DIR}/GDSS_enz'
-    is_mol = False
 
-class GridDataset(EgoDataset):
+class GridDataset(GenericDataset):
     data_name = 'GDSS_grid'
     raw_dir = f'{DATA_DIR}/GDSS_grid'
-    is_mol = False
-    
-class GridSmallDataset(EgoDataset):
-    data_name = 'grid_small'
-    raw_dir = f'{DATA_DIR}/grid_small'
-    is_mol = False
 
-class QM9Dataset(EgoDataset):
+
+class QM9Dataset(GenericDataset):
     data_name = "qm9"
     raw_dir = f"{DATA_DIR}/qm9"
     is_mol = True
         
-class ZINCDataset(EgoDataset):
+class ZINCDataset(GenericDataset):
     data_name = 'zinc'
     raw_dir = f'{DATA_DIR}/zinc'
     is_mol = True
     
-class PlanarDataset(EgoDataset):
+class PlanarDataset(GenericDataset):
     data_name = 'planar'
     raw_dir = f'{DATA_DIR}/planar'
-    is_mol = False
             
-class SBMDataset(EgoDataset):
-    data_name = 'sbm'
-    raw_dir = f'{DATA_DIR}/sbm'
-    is_mol = False
-
-class ProteinsDataset(EgoDataset):
-    data_name = 'proteins'
-    raw_dir = f'{DATA_DIR}/proteins'
-    is_mol = False
-    
-class TrafficDataset(EgoDataset):
-    data_name = 'traffic'
-    raw_dir = f'{DATA_DIR}/traffic'
-    is_mol = False
-    
-class ProfoldDataset(EgoDataset):
-    data_name = 'profold'
-    raw_dir = f'{DATA_DIR}/profold'
-    is_mol = False
-    
-class EgoLargeDataset(EgoDataset):
-    data_name = 'ego'
-    raw_dir = f'{DATA_DIR}/ego'
-    is_mol = False
-    
-class LobsterDataset(EgoDataset):
-    data_name = 'lobster'
-    raw_dir = f'{DATA_DIR}/lobster'
-    is_mol = False
-    
-class PointDataset(EgoDataset):
-    data_name = 'point'
-    raw_dir = f'{DATA_DIR}/point'
-    is_mol = False

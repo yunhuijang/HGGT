@@ -10,22 +10,10 @@ EOS_TOKEN = "[eos]"
 UNK_TOKEN = "<unk>"
 
 standard_tokens = [PAD_TOKEN, BOS_TOKEN, EOS_TOKEN]
-TOKENS_BFS = standard_tokens.copy()
-TOKENS_BFS.extend([str(x) for x in np.arange(0, 2)])
-
-TOKENS_BFS_DEG = standard_tokens.copy()
-TOKENS_BFS_DEG.extend([str(x) for x in np.arange(0, 5)])
-
-TOKENS_DFS = standard_tokens.copy()
-TOKENS_DFS.extend(["(", ")", '0', '1'])
 
 TOKENS_GROUP = standard_tokens.copy()
 group_num_tokens = list(product([0,1], repeat=4))
 TOKENS_GROUP.extend([''.join(str(token)).replace(', ', '')[1:-1] for token in group_num_tokens if token!=(0,0,0,0)])
-
-TOKENS_BFS_DEG_GROUP = standard_tokens.copy()
-group_num_tokens = list(product([0,1,2,3,4], repeat=4))
-TOKENS_BFS_DEG_GROUP.extend([''.join(str(token)).replace(', ', '')[1:-1] for token in group_num_tokens])
 
 TOKENS_GROUP_RED = TOKENS_GROUP.copy()
 group_num_tokens = list(product([0,1], repeat=3))
@@ -64,64 +52,6 @@ def grouper_mol(string, k=2):
     string_cut = [non_group_tokens[i:i+k_square] for i in range(0,len(non_group_tokens),k_square)]
     cut_list = [*string_cut]
     return cut_list
-
-def grouper_mol_high(string, k):
-    non_group_tokens = []
-    k_square = k**2
-    string_iter = iter(string)
-    peek = None
-    while True:
-        char = peek if peek else next(string_iter, "")
-        peek = None
-        if not char:
-            break
-        if char in ['C', 'B']:
-            peek = next(string_iter, "")
-            if char + peek in ['Cl', 'Br']:
-                token = char + peek
-                peek = None
-            else:
-                token = char
-        else:
-            token = char
-        non_group_tokens.append(token)
-    string_cut = [non_group_tokens[i:i+k_square] for i in range(0,len(non_group_tokens),k_square)]
-    cut_list = [*string_cut]
-    return cut_list
-
-def replace_character(token, add_num, add_num_2):
-    # return " ".join(node_type_dict.get(char, char) for char in grouper_mol(token)[0])
-    final_token = ""
-    flag = 0
-    for char in token:
-        if char.isnumeric():
-            final_token += char + " "
-        elif flag == 0:
-            final_token += char + str(add_num) + " "
-            flag += 1
-        else:
-            final_token += char + str(add_num_2) + " "
-            
-    return final_token[:-1]
-
-
-
-def map_high_tokens(tokens):
-    '''
-    add multiple node features for high cardinality tokens
-    '''
-    
-    higher_tokens = [token for token in tokens if re.search('[a-zA-Z]', token)]
-    # remove pad, eos, bos tokens
-    higher_tokens = higher_tokens[3:]
-    splitted_tokens = [grouper_mol(token)[0] for token in higher_tokens]
-    total_tokens = []
-    for add_num in range(0,10):
-        for add_num_2 in range(0,10):
-            new_tokens = [replace_character(token, add_num, add_num_2) for token in splitted_tokens]
-            total_tokens.extend(new_tokens)
-        
-    return total_tokens
     
 TOKENS_MOL = TOKENS_GROUP.copy()
 # 5: single / 6: double / 7:triple / 8: aromatic
@@ -167,17 +97,8 @@ for group in group_ad_tokens:
 
 TOKENS_ZINC_RED.extend(list(set([''.join(token) for token in group_ad_tokens])))
 
-num_tokens = [" ".join(num_token) for num_token in TOKENS_MOL_RED[3:]]
-high_tokens = map_high_tokens(TOKENS_ZINC_RED)
-TOKENS_ZINC_RED_HIGH = standard_tokens.copy()
-TOKENS_ZINC_RED_HIGH.extend(num_tokens)
-TOKENS_ZINC_RED_HIGH.extend(high_tokens)
-
-TOKENS_DICT = {'dfs': TOKENS_DFS, 'bfs': TOKENS_BFS, 'group': TOKENS_GROUP, 
-               'bfs-deg': TOKENS_BFS_DEG, 'bfs-deg-group': TOKENS_BFS_DEG_GROUP,
-               'qm9': TOKENS_QM9, 'zinc': TOKENS_ZINC, 'group-red': TOKENS_GROUP_RED, 
-               'group-red-3': TOKENS_GROUP_THREE, 'qm9-red': TOKENS_QM9_RED, 'zinc-red': TOKENS_ZINC_RED,
-               'zinc-red-high': TOKENS_ZINC_RED_HIGH}
+TOKENS_DICT = {'group-red': TOKENS_GROUP_RED, 
+               'group-red-3': TOKENS_GROUP_THREE, 'qm9-red': TOKENS_QM9_RED, 'zinc-red': TOKENS_ZINC_RED}
 
 
 def token_list_to_dict(tokens):
@@ -193,17 +114,7 @@ def id_to_token(tokens):
 
 def tokenize(string, string_type, k):
     tokens = ["[bos]"]
-    if string_type in ['group', 'bfs-deg-group', 'qm9']:
-        string_cut = [string[i:i+4] for i in range(0, len(string), 4)]
-        tokens.extend([*string_cut])
-    elif string_type == 'zinc':
-        cut_list = grouper_mol(string)
-        tokens.extend([''.join(tok) for tok in cut_list])
-    elif string_type == 'zinc-red-high':
-        split_tokens = [" ".join(grouper_mol(token)[0]) for token in string]
-        high_tokens = [replace_character_random(token) if re.search('[a-zA-Z]', token) else token for token in split_tokens]
-        tokens.extend(high_tokens)
-    elif 'red' in string_type:
+    if 'red' in string_type:
         tokens.extend(string)
     else:
         tokens.extend([*string])
@@ -218,8 +129,6 @@ def map_one(token):
 def untokenize(sequence, string_type, k=2):
     ID2TOKEN = id_to_token(TOKENS_DICT[string_type])
     tokens = [ID2TOKEN[id_] for id_ in sequence]
-    if string_type in ['bfs-deg', 'bfs-deg-group']:
-        tokens = [map_one(token) for token in tokens]
     org_tokens = tokens
     if tokens[0] != "[bos]":
         return "", "".join(org_tokens)
@@ -230,10 +139,7 @@ def untokenize(sequence, string_type, k=2):
     if ("[bos]" in tokens) or ("[pad]" in tokens):
         return "", "".join(org_tokens)
     
-    if 'red' in string_type:
-        return tokens, org_tokens
-    else:
-        return "".join(tokens), "".join(org_tokens)
+    return tokens, org_tokens
     
 def replace_character_random(token):
     chars = token.split(' ')

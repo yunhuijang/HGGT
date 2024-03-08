@@ -232,14 +232,11 @@ def map_all_child_deg(node, tree):
     
     return str(child_deg)
 
-def tree_to_bfs_string(tree, string_type='bfs'):
+def tree_to_bfs_string(tree, string_type='group-red'):
     bfs_node_list = [tree[node] for node in tree.expand_tree(mode=tree.WIDTH,
                                                              key=lambda x: (int(x.identifier.split('-')[0]), int(x.identifier.split('-')[1])))][1:]
-    if string_type in ['bfs', 'group', 'bfs-tri', 'group-red', 'group-red-3']:
-        bfs_value_list = [str(int(node.tag)) for node in bfs_node_list]
-    elif string_type in ['bfs-deg', 'bfs-deg-group']:
-        bfs_value_list = [map_child_deg(node, tree) for node in bfs_node_list]
-    
+    bfs_value_list = [str(int(node.tag)) for node in bfs_node_list]
+
     return ''.join(bfs_value_list)
 
 def grouper(n, iterable, fillvalue=None):

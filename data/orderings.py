@@ -10,7 +10,7 @@ import torch
 from torch_geometric.data import Data
 from torch_geometric.utils import from_scipy_sparse_matrix
 
-
+# Code adpated from https://github.com/Genentech/bandwidth-graph-generation
 def bw_from_adj(A: np.ndarray) -> int:
     """calculate bandwidth from adjacency matrix"""
     band_sizes = np.arange(A.shape[0]) - A.argmax(axis=1)

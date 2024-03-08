@@ -5,8 +5,7 @@ import torch
 import numpy as np
 import re
 
-from data.orderings import ORDER_FUNCS, order_graphs
-from data.data_utils import train_val_test_split, adj_to_k2_tree, map_child_deg, TYPE_NODE_DICT, NODE_TYPE_DICT, BOND_TYPE_DICT, map_new_ordered_graph
+from data.data_utils import TYPE_NODE_DICT, NODE_TYPE_DICT, BOND_TYPE_DICT
 
 
 DATA_DIR = "resource"
@@ -22,15 +21,10 @@ def mols_to_smiles(mols):
 def smiles_to_mols(smiles):
     return [Chem.MolFromSmiles(s) for s in tqdm(smiles, 'SMILES to molecules')]
 
-def tree_to_bfs_string_mol(tree, string_type='bfs'):
+def tree_to_bfs_string_mol(tree):
     bfs_node_list = [tree[node] for node in tree.expand_tree(mode=tree.WIDTH,
                                                              key=lambda x: (int(x.identifier.split('-')[0]), int(x.identifier.split('-')[1])))][1:]
-    if string_type in ['bfs', 'group', 'bfs-tri']:
-        bfs_value_list = [str(int(node.tag)) for node in bfs_node_list]
-        if string_type == 'bfs-tri':
-            bfs_value_list = [bfs_value_list[i] for i in range(len(bfs_value_list)) if i % 4 !=2]
-    elif string_type in ['bfs-deg', 'bfs-deg-group']:
-        bfs_value_list = [map_child_deg(node, tree) for node in bfs_node_list]
+    bfs_value_list = [str(int(node.tag)) for node in bfs_node_list]
     
     final_value_list = [TYPE_NODE_DICT[token] if token in TYPE_NODE_DICT.keys() else token for token in bfs_value_list]
     
