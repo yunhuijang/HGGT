@@ -8,9 +8,9 @@ from collections import deque
 from torch.nn.functional import pad
 import math
 import re
+import time
 
 from data.tokens import PAD_TOKEN, BOS_TOKEN, EOS_TOKEN, TOKENS_DICT, token_to_id, id_to_token, TOKENS_GROUP_THREE
-
 
 
 # helper Module to convert tensor of input indices into corresponding tensor of token embeddings
@@ -248,7 +248,6 @@ class TransGenerator(nn.Module):
         # self.node_type_generator = nn.Linear(emb_size, len())
 
     def forward(self, sequences):
-        
         batch_size = sequences.size(0)
         sequence_len = sequences.size(1)
         TOKEN2ID = token_to_id(self.string_type, self.k)
@@ -289,7 +288,6 @@ class TransGenerator(nn.Module):
 
         #
         logits = self.generator(out)
-
         return logits
 
     def decode(self, num_samples, max_len, device):

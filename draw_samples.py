@@ -57,7 +57,9 @@ def draw_generated_graphs(data_name, method, index=0):
         with open(f'../GDSS/samples/pkl/{data_dict[data_name]}/test/{data_name}_sample.pkl', 'rb') as f:
             graphs = pickle.load(f)
         print(len(graphs))
-    plot_graphs_list(graphs[:4], title=f'{data_name}-{method}', save_dir=f'figure/{data_name}', max_num=9)
+        
+    
+    # plot_graphs_list(graphs[:4], title=f'{data_name}-{method}', save_dir=f'figure/{data_name}', max_num=9)
     # plot_one_graph(graphs[index], title=f'{method}-one', save_dir=f'figure/{data_name}')
 
 def draw_generated_molecules(data_name):

@@ -15,6 +15,7 @@ from itertools import compress, islice
 import os
 from pathlib import Path
 import json
+import re
 
 
 from data.tokens import grouper_mol
@@ -43,7 +44,10 @@ def get_children_identifier(node, tree):
 
 def get_sort_key(node_id):
     if len(node_id.split('-')) > 2:
-        return (int(node_id.split('-')[0]), int(node_id.split('-')[1]), int(node_id.split('-')[2]))
+        try:
+            return (int(node_id.split('-')[0]), int(node_id.split('-')[1]), int(node_id.split('-')[2]))
+        except:
+            assert node_id.split('-')
     else:
         return (int(node_id.split('-')[0]), int(node_id.split('-')[1]))
     
@@ -160,7 +164,10 @@ def tree_to_adj(tree, k=2):
     '''
     convert k2 tree to adjacency matrix
     '''
-    tree = map_starting_point(tree, k)
+    try:
+        tree = map_starting_point(tree, k)
+    except TypeError:
+        return None
     depth = tree.depth()
     leaves = [leaf for leaf in tree.leaves() if leaf.tag != '0']
     one_data_points = [leaf.data for leaf in leaves]
@@ -297,6 +304,9 @@ def train_val_test_split(
         train_len = int(round((len(data) - test_len)*0.8))
         val_len = len(data) - train_len - test_len
         train, val, test = random_split(data, [train_len, val_len, test_len], generator=torch.Generator().manual_seed(1234))
+    elif data_name in ['profold', 'collab']:
+        train, test = train_test_split(data, train_size=train_size, shuffle=False)
+        val = test
     else:
         train_val, test = train_test_split(data, train_size=train_size + val_size, shuffle=False)
         train, val = train_test_split(train_val, train_size=train_size / (train_size + val_size), random_state=seed, shuffle=True)
@@ -334,8 +344,7 @@ def map_new_ordered_graph(ordered_graph):
     '''
     org_graph = ordered_graph.graph
     ordering = ordered_graph.ordering
-    mapping = {i: ordering.index(i) for i in range(len(ordering))}
-    new_graph = nx.relabel_nodes(org_graph, mapping)
+    new_graph = nx.from_numpy_array(nx.adjacency_matrix(org_graph, nodelist=ordering))
     return new_graph
 
 # for redundant removed strings
@@ -450,7 +459,10 @@ def add_zero_to_identifier(tree):
     return new_tree
 
 def fix_symmetry(adj):
-    sym_adj = torch.tril(adj) + torch.tril(adj).T
+    try:
+        sym_adj = torch.tril(adj) + torch.tril(adj).T
+    except TypeError:
+        return None
     return torch.where(sym_adj>0, 1, 0)
 
 
@@ -527,7 +539,12 @@ def get_max_len(data_name, order='C-M', k=2):
     total_strings = []
     k_square = k**2
     for split in ['train', 'test', 'val']:
-        string_path = os.path.join(DATA_DIR, f"{data_name}/{order}/{data_name}_str_{split}_{k}.txt")
+        if k > 2:
+            string_path = os.path.join(DATA_DIR, f"{data_name}/{order}/{data_name}_str_{split}_{k}.txt")
+        else:
+            string_path = os.path.join(DATA_DIR, f"{data_name}/{order}/{data_name}_str_{split}.txt")
+        
+        # string_path = os.path.join(DATA_DIR, f"{data_name}/{order}/{data_name}_str_{split}_{k}.txt")
         strings = Path(string_path).read_text(encoding="utf=8").splitlines()
         
         total_strings.extend(strings)
@@ -539,5 +556,22 @@ def get_max_len(data_name, order='C-M', k=2):
     group_max_len = max_len / k_square
     red_max_len = max([len(string) for string in red_list])
     
+    # max_len: the length of original string
+    # group_max_len: the length of group string
+    # red_max_len: the length of group-red string
     return max_len, group_max_len, red_max_len
-    
+
+def clean_high_feature(string):
+    new_string = []
+    for token in string:
+        if re.search('[a-zA-Z]', token):
+            new_token = ""
+            for char in token.split(" "):
+                if char.isnumeric():
+                    new_token += char
+                else:
+                    new_token += char[:-1]
+            new_string.append(new_token)
+        else:
+            new_string.append(token.replace(" ", ""))
+    return new_string

@@ -5,7 +5,7 @@ import wandb
 import os
 from pytorch_lightning.loggers import WandbLogger
 from torch.nn.utils.rnn import pad_sequence
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint, Timer
 
 from evaluation.evaluation import compute_sequence_cross_entropy
 from model.trans_generator import TransGenerator
@@ -72,16 +72,17 @@ class TransGeneratorLightningModule(BaseGeneratorLightningModule):
         loss = compute_sequence_cross_entropy(logits, batched_data, self.hparams.string_type)
         statistics["loss/total"] = loss
         # statistics["acc/total"] = compute_sequence_accuracy(logits, batched_data, ignore_index=0)[0]
-
         return loss, statistics
 
     
     @staticmethod
     def add_args(parser):
         
-        parser.add_argument("--dataset_name", type=str, default="GDSS_com")
-        parser.add_argument("--batch_size", type=int, default=128)
+        parser.add_argument("--dataset_name", type=str, default="qm9")
+        parser.add_argument("--batch_size", type=int, default=32)
         parser.add_argument("--num_workers", type=int, default=6)
+        parser.add_argument("--ckpt_path", type=str, default='no')
+        
 
         parser.add_argument("--order", type=str, default="C-M")
         parser.add_argument("--replicate", type=int, default=0)
@@ -90,16 +91,16 @@ class TransGeneratorLightningModule(BaseGeneratorLightningModule):
         parser.add_argument("--dropout", type=float, default=0.1)
         parser.add_argument("--lr", type=float, default=0.002)
         
-        parser.add_argument("--check_sample_every_n_epoch", type=int, default=10)
-        parser.add_argument("--num_samples", type=int, default=100)
-        parser.add_argument("--sample_batch_size", type=int, default=100)
+        parser.add_argument("--check_sample_every_n_epoch", type=int, default=2)
+        parser.add_argument("--num_samples", type=int, default=50)
+        parser.add_argument("--sample_batch_size", type=int, default=50)
         parser.add_argument("--max_epochs", type=int, default=20)
         parser.add_argument("--wandb_on", type=str, default='disabled')
         
         parser.add_argument("--group", type=str, default='string')
         parser.add_argument("--model", type=str, default='trans')
-        parser.add_argument("--max_len", type=int, default=76)
-        parser.add_argument("--string_type", type=str, default='group-red-3')
+        parser.add_argument("--max_len", type=int, default=87)
+        parser.add_argument("--string_type", type=str, default='zinc-red-high')
         parser.add_argument("--max_depth", type=int, default=20)
         
         # transformer
@@ -113,7 +114,7 @@ class TransGeneratorLightningModule(BaseGeneratorLightningModule):
         parser.add_argument("--learn_pos", action="store_true")
         parser.add_argument("--abs_pos", action="store_true")
         
-        parser.add_argument("--k", type=int, default=3)
+        parser.add_argument("--k", type=int, default=2)
 
         return parser
 
@@ -132,17 +133,22 @@ if __name__ == "__main__":
 
 
     model = TransGeneratorLightningModule(hparams)
+    
     checkpoint_callback = ModelCheckpoint(
-        dirpath=os.path.join("resource/checkpoint/", hparams.dataset_name), monitor="val/loss/total", mode="min",
+        dirpath=os.path.join("resource/checkpoint/", wandb.run.id),
     )
-
+    
+    wandb.watch(model)
+    timer = Timer(duration="00:12:00:00")
     trainer = pl.Trainer(
         devices=1,
         accelerator='gpu',
         default_root_dir="/resource/log/",
         max_epochs=hparams.max_epochs,
         gradient_clip_val=hparams.gradient_clip_val,
-        callbacks=[checkpoint_callback],
+        callbacks=[checkpoint_callback, timer],
         logger=wandb_logger
     )
+    
     trainer.fit(model)
+    print(round(timer.time_elapsed("train"),3))

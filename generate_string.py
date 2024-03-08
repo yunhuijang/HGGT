@@ -6,8 +6,8 @@ from data.load_data import generate_mol_string
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    # dataset_name: GDSS_com, GDSS_enz, GDSS_grid, planar, qm9, zinc
-    parser.add_argument("dataset_name", type=str, default='GDSS_com')
+    # dataset_name: GDSS_com, GDSS_enz, GDSS_grid, planar, qm9, zinc, planar, sbm
+    parser.add_argument("dataset_name", type=str, default='traffic')
     # order: C-M, BFS, DFS
     parser.add_argument("order", type=str, default='C-M')
     # k: 2, 3
@@ -15,7 +15,7 @@ if __name__ == "__main__":
     
     args, _ = parser.parse_known_args()
     
-    if args.dataset_name in ['GDSS_com', 'GDSS_enz', 'GDSS_grid', 'planar']:
+    if args.dataset_name in ['GDSS_com', 'GDSS_enz', 'GDSS_grid', 'planar', 'sbm', 'planar', 'traffic', 'ego', 'lobster', 'point']:
         generate_string(dataset_name=args.dataset_name, order=args.order, k=args.k)
     else:
         generate_mol_string(dataset_name=args.dataset_name, order=args.order)

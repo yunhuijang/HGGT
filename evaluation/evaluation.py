@@ -14,6 +14,8 @@ import random
 import subprocess as sp
 from eden.graph import vectorize
 from sklearn.metrics.pairwise import pairwise_kernels
+# import graph_tool.all as gt
+# from scipy.stats import chi2
 
 from data.tokens import TOKENS_DICT
 
@@ -391,3 +393,84 @@ def eval_graph_list(graph_ref_list, graph_pred_list, methods=None, kernels=None)
             results[method] = round(METHOD_NAME_TO_FUNC[method](graph_ref_list, graph_pred_list, kernels[method]), 6)
         print('\033[91m' + f'{method:9s}' + '\033[0m' + ' : ' + '\033[94m' +  f'{results[method]:.6f}' + '\033[0m')
     return results
+
+# # codes adapted from https://github.com/KarolisMart/SPECTRE
+# def is_planar_graph(G):
+#     return nx.is_connected(G) and nx.check_planarity(G)[0]
+
+# def is_grid_graph(G):
+#     """
+#     Check if the graph is grid, by comparing with all the real grids with the same node count
+#     """
+#     all_grid_file = f"data/all_grids.pt"
+#     if os.path.isfile(all_grid_file):
+#             all_grids = torch.load(all_grid_file)
+#     else:
+#         all_grids = {}
+#         for i in range(2, 20):
+#             for j in range(2, 20):
+#                     G_grid = nx.grid_2d_graph(i, j)
+#                     n_nodes = f"{len(G_grid.nodes())}"
+#                     all_grids[n_nodes] = all_grids.get(n_nodes, []) + [G_grid]
+#         torch.save(all_grids, all_grid_file)
+    
+#     n_nodes = f"{len(G.nodes())}"
+#     if n_nodes in all_grids:
+#         for G_grid in all_grids[n_nodes]:
+#             if nx.faster_could_be_isomorphic(G, G_grid):
+#                 if nx.is_isomorphic(G, G_grid):
+#                     return True
+#         return False
+#     else:
+#         return False
+    
+# def is_sbm_graph(G, p_intra=0.3, p_inter=0.005, strict=True, refinement_steps=1000):
+#     """
+#     Check if how closely given graph matches a SBM with given probabilites by computing mean probability of Wald test statistic for each recovered parameter
+#     """
+
+#     adj = nx.adjacency_matrix(G).toarray()
+#     idx = adj.nonzero()
+#     g = gt.Graph()
+#     g.add_edge_list(np.transpose(idx))
+#     try:
+#         state = gt.minimize_blockmodel_dl(g)
+#     except ValueError:
+#         if strict:
+#             return False
+#         else:
+#             return 0.0
+
+#     # Refine using merge-split MCMC
+#     for i in range(refinement_steps): 
+#         state.multiflip_mcmc_sweep(beta=np.inf, niter=10)
+    
+#     b = state.get_blocks()
+#     b = gt.contiguous_map(state.get_blocks())
+#     state = state.copy(b=b)
+#     e = state.get_matrix()
+#     n_blocks = state.get_nonempty_B()
+#     node_counts = state.get_nr().get_array()[:n_blocks]
+#     edge_counts = e.todense()[:n_blocks, :n_blocks]
+#     if strict:
+#         if (node_counts > 40).sum() > 0 or (node_counts < 20).sum() > 0 or n_blocks > 5 or n_blocks < 2:
+#             return False
+    
+#     max_intra_edges = node_counts * (node_counts - 1)
+#     est_p_intra = np.diagonal(edge_counts) / (max_intra_edges + 1e-6)
+
+#     max_inter_edges = node_counts.reshape((-1, 1)) @ node_counts.reshape((1, -1))
+#     np.fill_diagonal(edge_counts, 0)
+#     est_p_inter = edge_counts / (max_inter_edges + 1e-6)
+
+#     W_p_intra = (est_p_intra - p_intra)**2 / (est_p_intra * (1-est_p_intra) + 1e-6)
+#     W_p_inter = (est_p_inter - p_inter)**2 / (est_p_inter * (1-est_p_inter) + 1e-6)
+
+#     W = W_p_inter.copy()
+#     np.fill_diagonal(W, W_p_intra)
+#     p = 1 - chi2.cdf(abs(W), 1)
+#     p = p.mean()
+#     if strict:
+#         return p > 0.9 # p value < 10 %
+#     else:
+#         return p

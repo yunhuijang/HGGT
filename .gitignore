@@ -8,3 +8,4 @@ samples/
 wandb/
 *.sh
 k2g/
+*.txt

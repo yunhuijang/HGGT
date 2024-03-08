@@ -164,6 +164,7 @@ def order_graphs(
     ordered_graphs = []
     for i, graph in enumerate(graphs):
         for j in range(num_repetitions):
+            graph = graph.copy()
             # seed = i * (j + 1) + j
             random.seed(seed)
             np.random.seed(seed)
