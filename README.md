@@ -1,6 +1,6 @@
-# Hierarchical Graph Generation with $K^2$-trees 
+# Graph Generation with $K^2$-trees (ICLR 2024)
 
-In this repository, we implement the Hierarchical Graph Generation with $K^{2}$-Tree (HGGT).
+In this repository, we implement the paper: [Graph Generation with $K^{2}$-Tree (HGGT)](https://openreview.net/pdf?id=RIEW6M9YoV).
 
 <p align="center">
     <img width="750" src="assets/k2_tree_4.png"/>
@@ -24,6 +24,7 @@ pip install rdkit==2020.9.5
 pip install git+https://github.com/fabriziocosta/EDeN.git
 pip install pytorch-lightning==1.9.3
 pip install treelib
+pip install networkx==2.8.7
 ```
 
 ## Running experiments
