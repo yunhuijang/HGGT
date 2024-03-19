@@ -1,0 +1,17 @@
+python trainer/train_trans_generator.py \
+--order C-M \
+--dataset_name planar \
+--max_epochs 500 \
+--check_sample_every_n_epoch 501 \
+--replicate 0 \
+--max_len 230 \
+--wandb_on online \
+--string_type group-red \
+--lr 0.001 \
+--batch_size 32 \
+--sample_batch_size 50 \
+--num_samples 100 \
+--tree_pos \
+--pos_type emb \
+--dropout 0 \
+--k 2

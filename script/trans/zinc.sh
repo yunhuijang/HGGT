@@ -1,0 +1,16 @@
+python trainer/train_trans_generator.py \
+--order C-M \
+--dataset_name zinc \
+--max_epochs 500 \
+--check_sample_every_n_epoch 20 \
+--replicate 0 \
+--max_len 87 \
+--wandb_on online \
+--string_type zinc-red \
+--lr 0.0005 \
+--batch_size 32 \
+--num_samples 10000 \
+--sample_batch_size 50 \
+--dropout 0.1 \
+--input_dropout 0 \
+--k 2

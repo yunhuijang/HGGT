@@ -1,0 +1,18 @@
+python trainer/train_trans_generator.py \
+--order C-M \
+--dataset_name qm9 \
+--max_epochs 500 \
+--check_sample_every_n_epoch 20 \
+--replicate 0 \
+--max_len 23 \
+--wandb_on online \
+--string_type qm9-red \
+--lr 0.0005 \
+--batch_size 1024 \
+--num_samples 10000 \
+--sample_batch_size 400 \
+--tree_pos \
+--pos_type emb \
+--dropout 0.1 \
+--input_dropout 0.5 \
+--k 2
